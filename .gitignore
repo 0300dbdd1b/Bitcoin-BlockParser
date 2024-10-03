@@ -1,0 +1,44 @@
+
+# Ignore object files, binaries, and executable files
+*.o
+*.obj
+*.exe
+*.out
+*.so
+*.dll
+*.a
+*.dylib
+*.json
+
+# Ignore directories where binaries and object files are stored
+bin/
+obj/
+
+# Ignore compiled command database from bear
+compile_commands.json
+
+# Ignore cache files
+.cache/
+
+# Ignore temporary files created by editors and IDEs
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+*.pid
+
+# Ignore generated documentation
+*.doxyfile
+
+# Ignore build system files
+Makefile.in
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CMakeLists.txt.user
+
+# Ignore auto-generated tags
+tags
+TAGS

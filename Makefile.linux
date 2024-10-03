@@ -1,0 +1,67 @@
+
+# Makefile.linux
+
+# Compiler
+CC = gcc -std=c99
+
+# Directories
+SRC_DIR = src
+INC_DIR = include
+OBJ_DIR = obj
+BIN_DIR = bin
+TEST_DIR = test
+TEST_BIN_DIR = $(BIN_DIR)/test
+
+# Base Flags
+BASE_CFLAGS = -fsanitize=address -D_DEBUG -ggdb3 -I$(INC_DIR)
+BASE_LDFLAGS = -fsanitize=address
+
+# Linux-specific Flags
+CFLAGS = $(BASE_CFLAGS)
+LDFLAGS = $(BASE_LDFLAGS) -lleveldb
+
+# Source Files
+SRC_FILES = $(shell find $(SRC_DIR) -type f -name '*.c')
+OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
+
+# Test Files
+TEST_FILES = $(shell find $(TEST_DIR) -type f -name '*.c')
+TEST_BINARIES = $(patsubst $(TEST_DIR)/%.c,$(TEST_BIN_DIR)/%,$(TEST_FILES))
+
+# Executable Name
+NAME = BlockParser
+
+# Default Target
+all: $(BIN_DIR)/$(NAME)
+
+# Rule to compile object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Rule to link the main binary
+$(BIN_DIR)/$(NAME): $(OBJ_FILES)
+	@mkdir -p $(BIN_DIR)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+# Rule to compile test binaries
+$(TEST_BIN_DIR)/%: $(TEST_DIR)/%.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
+
+# Run all tests
+run_tests: $(TEST_BINARIES)
+	@for test in $(TEST_BINARIES); do \
+		echo "Running $$test..."; \
+		$$test; \
+		echo ""; \
+	done
+
+# Clean up
+clean:
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
+
+# Rebuild
+re: clean all
+
+.PHONY: all clean re run_tests
