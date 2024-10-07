@@ -8,6 +8,39 @@
 
 int WildcardMatch(const char *str, const char *pattern);
 
+
+// Function to copy a directory
+int CopyDirectory(const char *src_dir, const char *dest_dir)
+{
+    char command[1024];
+    snprintf(command, sizeof(command), "cp -r %s %s", src_dir, dest_dir);
+    int result = system(command);
+    
+    if (result != 0)
+	{
+        fprintf(stderr, "Error copying directory from '%s' to '%s'\n", src_dir, dest_dir);
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Function to delete a directory
+int DeleteDirectory(const char *dir_path)
+{
+    char command[1024];
+    snprintf(command, sizeof(command), "rm -rf %s", dir_path);
+    int result = system(command);
+    
+    if (result != 0)
+	{
+        fprintf(stderr, "Error deleting directory '%s'\n", dir_path);
+        return -1;
+    }
+    
+    return 0;
+}
+
 int IsDirectory(const char *path)
 {
     struct stat statbuf;

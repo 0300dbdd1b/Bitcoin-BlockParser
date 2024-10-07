@@ -13,7 +13,7 @@ TEST_DIR = test
 TEST_BIN_DIR = $(BIN_DIR)/test
 
 # Base Flags
-BASE_CFLAGS = -fsanitize=address -D_DEBUG -ggdb3 -I$(INC_DIR)
+BASE_CFLAGS = -fsanitize=address -D_DEBUG -O0 -ggdb3 -I$(INC_DIR)
 BASE_LDFLAGS = -fsanitize=address
 
 # Linux-specific Flags

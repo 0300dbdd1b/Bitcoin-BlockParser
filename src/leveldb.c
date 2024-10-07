@@ -10,10 +10,14 @@ LDB_Instance LDB_Init(const char *path)
 	LDB_Instance db;
 	db.errors = NULL;
 	db.dbPath = path;
-	db.options = leveldb_options_create();
-	leveldb_options_set_create_if_missing(db.options, 1);
-	db.roptions = leveldb_readoptions_create();
-	db.woptions = leveldb_writeoptions_create();
+	db.options = LDB_OptionsCreate();
+	LDB_OptionsSetCreateIfMissing(db.options, 0);
+	LDB_OptionsSetErrorIfExists(db.options, 0);
+
+	db.roptions = LDB_ReadOptionsCreate();
+	LDB_ReadOptionsSetFillCache(db.roptions, 0);
+
+	db.woptions = LDB_WriteOptionsCreate();
 	return db;
 }
 
@@ -25,7 +29,8 @@ LDB_Instance LDB_InitOpen(const char *path)
 	if (instance.errors != NULL)
 	{
 		//WARN: Better error handling system needed
-		printf("Failed to open leveldb\n");
+    	printf("Failed to open LevelDB: %s\n", instance.errors);
+		LDB_Free(instance.errors);
 		exit(EXIT_FAILURE);
 	}
 	return instance;

@@ -68,7 +68,7 @@ uint32_t GetLastBlockFileNumberUsed(const char *value, size_t valLen)
 
 uint8_t GetIsDatabaseReindexing(const char *value, size_t valLen)
 {
-
+	return 0;
 }
 
 
@@ -90,10 +90,7 @@ IndexRecords BuildIndexRecords(char *directory)
 	size_t counts[2];
 	size_t count = 0;
 	LDB_Instance instance = LDB_InitOpen(directory);
-	LOG_DEBUG("Opened");
-	TIME_BLOCK_START(countEntries);
 	LDB_CountEntriesForPrefixes(instance, "bf", 2, counts);
-	TIME_BLOCK_END(countEntries, "CountEntries : ");
 	indexRecords.blockIndexRecord = malloc(sizeof(BlockIndexRecord) * counts[0]);
 	indexRecords.fileInformationRecord = malloc(sizeof(FileInformationRecord) * counts[1]);
 	
@@ -111,7 +108,7 @@ IndexRecords BuildIndexRecords(char *directory)
 	  	else if (key[0] == 'f')
 		{
 			FileInformationRecord fileInformationRecord = GetFileInformationRecord(key, keyLen, value, valLen);
-			indexRecords.fileInformationRecord[fileInformationRecord.filenumber] = fileInformationRecord;
+			//  BUG: indexRecords.fileInformationRecord[fileInformationRecord.filenumber] = fileInformationRecord;
 			indexRecords.fileInformationRecordCount++;
 		}
 	  	else if (key[0] == 'l')
@@ -162,27 +159,44 @@ void SortFiles(FileList *fileList)
 
 void Indexer(char *datadir)
 {
+	SET_LOG_PRINT_LINE(0);
+	SET_LOG_PRINT_TIME(1);
+
+	char currentDirectory[MAX_PATH_LENGTH];
 	char blkDatDir[MAX_PATH_LENGTH];
 	char blkIndexesDir[MAX_PATH_LENGTH];
 	char chainstateDir[MAX_PATH_LENGTH];
 	char coinstatsDir[MAX_PATH_LENGTH];
 	char txIndexDir[MAX_PATH_LENGTH];
 
+	char tmpBlkIndexesDir[MAX_PATH_LENGTH];
+
 	SanitizeDirString(datadir);
 	if (!IsDirectory(datadir))
 		exit(-1);
 	// WARN: This won't work on windows.
 	// INFO: Might want to use something faster than snprintf
-    snprintf(blkDatDir, sizeof(blkDatDir), "%sblocks/", datadir);
+	getcwd(currentDirectory, sizeof(currentDirectory));
+    SanitizeDirString(currentDirectory);
+
+	snprintf(blkDatDir, sizeof(blkDatDir), "%sblocks/", datadir);
     snprintf(blkIndexesDir, sizeof(blkIndexesDir), "%sblocks/index/", datadir);
     snprintf(chainstateDir, sizeof(blkIndexesDir), "%schainstate/", datadir);
     snprintf(coinstatsDir, sizeof(blkIndexesDir), "%sindexes/coinstats/", datadir);
     snprintf(txIndexDir, sizeof(blkIndexesDir), "%sindexes/txindex/", datadir);
 
+	snprintf(tmpBlkIndexesDir, sizeof(tmpBlkIndexesDir), "%stmpIndexes", currentDirectory);
+
 	//NOTE: We can make a better estimate of the number of blk.dat files 4k is dumb.
 	gBlkFiles = ListFiles(blkDatDir, "blk*.dat", 4000);		//NOTE: Init Global Variables -- Array of blk.dat FileInfo
 	SortFiles(&gBlkFiles);									//NOTE: We sort that array so that array[0] == blk00000.dat
-	gIndexRecords = BuildIndexRecords(blkIndexesDir);		//NOTE: Init Global Variables -- IndexRecords
+	LOG_INFO("Copying %s to %s...", blkIndexesDir, tmpBlkIndexesDir);
+	CopyDirectory(blkIndexesDir, tmpBlkIndexesDir);
+	LOG_INFO("Copying Done.");
+	LOG_INFO("Indexing...");
+	gIndexRecords = BuildIndexRecords(tmpBlkIndexesDir);		//NOTE: Init Global Variables -- IndexRecords
+	LOG_INFO("Indexing Done.");
+	DeleteDirectory(tmpBlkIndexesDir);
 }
 
 
@@ -201,9 +215,9 @@ void PrintBlockIndexRecord(const BlockIndexRecord *record)
     printf("Undo File: %llu\n", (unsigned long long)record->undoFile);
     printf("Undo Offset: %llu\n", (unsigned long long)record->undoOffset);
     printf("Block Hash: ");
-	PrintByteString(record->blockHash, SHA256_HASH_SIZE);
+	PrintByteString(record->blockHash, SHA256_HASH_SIZE, stdout);
     printf("\n");
     printf("Block Header:\n");
-    PrintBlockHeader(&record->blockHeader);
+    PrintBlockHeader(&record->blockHeader, stdout);
   	printf("\n");
 }

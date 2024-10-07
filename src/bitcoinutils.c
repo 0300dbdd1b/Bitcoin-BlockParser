@@ -83,188 +83,155 @@ BlockHeader DecodeBlockHeader(const uint8_t *rawBlockHeader)
 	return  blockHeader;
 }
 
-// Updated PrintBlockHeader function
-void PrintBlockHeader(const BlockHeader *header) {
+
+
+
+void PrintBlockHeader(const BlockHeader *header, FILE *output) {
     if (header == NULL) {
-        printf("BlockHeader is NULL.\n");
+        fprintf(output, "\"BlockHeader\": null\n");
         return;
     }
+
     char buffer[50];
-    ConvertTimestampToString((header->time), buffer, sizeof(buffer));
-    // Convert version, bits, and nonce to uint8_t arrays for hex printing
+    ConvertTimestampToString(header->time, buffer, sizeof(buffer));
+
     uint8_t versionBytes[4], bitsBytes[4], nonceBytes[4];
-    ConvertUint32ToUint8Array((header->version), versionBytes);
-    ConvertUint32ToUint8Array((header->bits), bitsBytes);
-    ConvertUint32ToUint8Array((header->nonce), nonceBytes);
+    ConvertUint32ToUint8Array(header->version, versionBytes);
+    ConvertUint32ToUint8Array(header->bits, bitsBytes);
+    ConvertUint32ToUint8Array(header->nonce, nonceBytes);
 
-    // Print version in hex format
-    printf("Version: ");
-    PrintByteString(versionBytes, 4);
-    printf("\n");
+    // Start BlockHeader JSON object
+    fprintf(output, "\"BlockHeader\": {\n");
+    fprintf(output, "  \"Version\": \"");
+    PrintByteString(versionBytes, 4, output);
+    fprintf(output, "\",\n");
 
-    // Print previous block hash in hex format
-    printf("Previous Block Hash: ");
-    PrintByteString(header->prevBlockHash, SHA256_HASH_SIZE);
-    printf("\n");
+    fprintf(output, "  \"PreviousBlockHash\": \"");
+    PrintByteString(header->prevBlockHash, SHA256_HASH_SIZE, output);
+    fprintf(output, "\",\n");
 
-    // Print Merkle root in hex format
-    printf("Merkle Root: ");
-    PrintByteString(header->merkleRoot, SHA256_HASH_SIZE);
-    printf("\n");
+    fprintf(output, "  \"MerkleRoot\": \"");
+    PrintByteString(header->merkleRoot, SHA256_HASH_SIZE, output);
+    fprintf(output, "\",\n");
 
-    // Print time as a formatted string
-    printf("Time: %s\n", buffer);
+    fprintf(output, "  \"Time\": \"%s\",\n", buffer);
 
-    // Print bits in hex format
-    printf("Bits: ");
-    PrintByteString(bitsBytes, 4);
-    printf("\n");
+    fprintf(output, "  \"Bits\": \"");
+    PrintByteString(bitsBytes, 4, output);
+    fprintf(output, "\",\n");
 
-    // Print nonce in hex format
-    printf("Nonce: ");
-    PrintByteString(nonceBytes, 4);
-    printf("\n\n");
+    fprintf(output, "  \"Nonce\": \"");
+    PrintByteString(nonceBytes, 4, output);
+    fprintf(output, "\"\n}\n");
 }
 
-void PrintStackItem(const StackItem *item)
-{
-    // Print the size of the stack item
-    printf("      Size: %u bytes\n", item->size);
 
-    // Print the item data in hexadecimal
-    printf("      Data: ");
-    for (uint16_t i = 0; i < item->size; ++i)
-        printf("%02x", item->item[i]);
-    printf("\n");
+
+
+void PrintInput(const Input *input, FILE *output) {
+    fprintf(output, "    {\n");
+    fprintf(output, "      \"TXID\": \"");
+    for (int i = 31; i >= 0; --i) {
+        fprintf(output, "%02x", input->txid[i]);
+    }
+    fprintf(output, "\",\n");
+
+    fprintf(output, "      \"Vout\": %u,\n", input->vout);
+    fprintf(output, "      \"ScriptSigSize\": %u,\n", input->scriptSigSize);
+
+    char *scriptSigHex = malloc(input->scriptSigSize * 2 + 1); // Ensure buffer is correct size
+    if (scriptSigHex == NULL) {
+        fprintf(stderr, "Memory allocation failed for scriptSigHex\n");
+        return;
+    }
+
+    for (uint16_t i = 0, offset = 0; i < input->scriptSigSize; ++i) {
+        snprintf(scriptSigHex + offset, 3, "%02x", input->scriptSig[i]);
+        offset += 2;
+    }
+    scriptSigHex[input->scriptSigSize * 2] = '\0'; // Null-terminate the hex string
+
+    fprintf(output, "      \"ScriptSig\": \"%s\",\n", scriptSigHex);
+    free(scriptSigHex);
+
+    fprintf(output, "      \"Sequence\": %u\n    }", input->sequence);
 }
 
-void PrintWitness(const Witness *witness)
-{
-    printf("    Stack Items Count: %u\n", witness->stackItemsCount);
+void PrintOutput(const Output *output, FILE *outputFile) {
+    fprintf(outputFile, "    {\n");
+    fprintf(outputFile, "      \"Amount\": %llu,\n", (unsigned long long)output->amount);
+    fprintf(outputFile, "      \"ScriptPubKeySize\": %u,\n", output->scriptPubKeySize);
 
-    for (uint16_t i = 0; i < witness->stackItemsCount; ++i)
-    {
-        printf("    Stack Item %u:\n", i + 1);
-        PrintStackItem(&witness->stackItems[i]);
+    char *scriptPubKeyHex = malloc(output->scriptPubKeySize * 2 + 1); // Ensure buffer is correct size
+    if (scriptPubKeyHex == NULL) {
+        fprintf(stderr, "Memory allocation failed for scriptPubKeyHex\n");
+        return;
     }
+
+    for (uint16_t i = 0, offset = 0; i < output->scriptPubKeySize; ++i) {
+        snprintf(scriptPubKeyHex + offset, 3, "%02x", output->scriptPubKey[i]);
+        offset += 2;
+    }
+    scriptPubKeyHex[output->scriptPubKeySize * 2] = '\0'; // Null-terminate the hex string
+
+    fprintf(outputFile, "      \"ScriptPubKey\": \"%s\"\n    }", scriptPubKeyHex);
+    free(scriptPubKeyHex);
 }
 
-// Function to print an output
-void PrintOutput(const Output *output)
-{
-    // Print the amount in satoshis
-    printf("  Amount: %llu satoshis\n", (unsigned long long)output->amount);
 
-    // Print the scriptPubKey size
-    printf("  ScriptPubKey Size: %u bytes\n", output->scriptPubKeySize);
+void PrintTransaction(const Transaction *tx, FILE *output) {
+    fprintf(output, "  {\n");
+    fprintf(output, "    \"TransactionSize\": %d,\n", tx->size);
+    fprintf(output, "    \"Version\": %u,\n", tx->version);
 
-    // Print the scriptPubKey in hexadecimal
-    printf("  ScriptPubKey: ");
-    for (uint16_t i = 0; i < output->scriptPubKeySize; ++i)
-        printf("%02x", output->scriptPubKey[i]);
-    printf("\n");
+    // Print SegWit status
+    fprintf(output, "    \"SegWit\": %s,\n", (tx->marker == 0x00 && tx->flag == 0x01) ? "true" : "false");
+
+    fprintf(output, "    \"Inputs\": [\n");
+    for (uint16_t i = 0; i < tx->inputCount; ++i) {
+        PrintInput(&tx->inputs[i], output);
+        if (i < tx->inputCount - 1)
+            fprintf(output, ",\n");  // Add comma if not the last input
+        else
+            fprintf(output, "\n");
+    }
+    fprintf(output, "    ],\n");
+
+    fprintf(output, "    \"Outputs\": [\n");
+    for (uint16_t i = 0; i < tx->outputCount; ++i) {
+        PrintOutput(&tx->outputs[i], output);
+        if (i < tx->outputCount - 1)
+            fprintf(output, ",\n");  // Add comma if not the last output
+        else
+            fprintf(output, "\n");
+    }
+    fprintf(output, "    ]\n  }");
 }
 
-// Function to print an input
-void PrintInput(const Input *input)
-{
-    // Print the transaction ID (txid) in reverse order (big-endian format)
-    printf("  TXID: ");
-    for (int i = 31; i >= 0; --i)
-        printf("%02x", input->txid[i]);
-    printf("\n");
+void PrintBlock(const Block *block, FILE *output) {
+    fprintf(output, "{\n");
+    fprintf(output, "  \"Magic\": \"0x%08x\",\n", block->magic);
+    fprintf(output, "  \"BlockSize\": %u,\n", block->blockSize);
+    fprintf(output, "  \"TransactionCount\": %u,\n", block->txCount);
+    
+    // Print BlockHeader
+    PrintBlockHeader(&block->header, output);
 
-    // Print the output index (vout)
-    printf("  Vout: %u\n", input->vout);
+    // Add the missing comma after BlockHeader before Transactions
+    fprintf(output, ",\n");
 
-    // Print the scriptSig size
-    printf("  ScriptSig Size: %u bytes\n", input->scriptSigSize);
-
-    // Print the scriptSig in hexadecimal
-    printf("  ScriptSig: ");
-    for (uint16_t i = 0; i < input->scriptSigSize; ++i)
-        printf("%02x", input->scriptSig[i]);
-    printf("\n");
-
-    // Print the sequence number
-    printf("  Sequence: %u\n", input->sequence);
+    // Print Transactions array
+    fprintf(output, "  \"Transactions\": [\n");
+    for (uint16_t i = 0; i < block->txCount; ++i) {
+        PrintTransaction(&block->transactions[i], output);
+        if (i < block->txCount - 1)
+            fprintf(output, ",\n");  // Add comma if not the last transaction
+        else
+            fprintf(output, "\n");
+    }
+    fprintf(output, "  ]\n");
+    fprintf(output, "}\n");
 }
-
-void PrintTransaction(const Transaction *tx)
-{
-    // Print the transaction version
-	printf("Transaction Size: %d\n", tx->size);
-    printf("Version: %u\n", tx->version);
-
-    // Check for SegWit marker and flag
-    if (tx->marker == 0x00 && tx->flag == 0x01)
-    {
-        printf("SegWit Transaction Detected\n");
-    }
-    else
-    {
-        printf("Non-SegWit Transaction\n");
-    }
-
-    // Print the number of inputs
-    printf("Input Count: %u\n", tx->inputCount);
-
-    // Loop through each input and print its details
-    for (uint16_t i = 0; i < tx->inputCount; ++i)
-    {
-        printf("Input %u:\n", i + 1);
-        PrintInput(&tx->inputs[i]);
-    }
-
-    // Print the number of outputs
-    printf("Output Count: %u\n", tx->outputCount);
-
-    // Loop through each output and print its details
-    for (uint16_t i = 0; i < tx->outputCount; ++i)
-    {
-        printf("Output %u:\n", i + 1);
-        PrintOutput(&tx->outputs[i]);
-    }
-
-    // If it's a SegWit transaction, print the witness data
-    if (tx->marker == 0x00 && tx->flag == 0x01)
-    {
-        printf("Witness Data:\n");
-        for (uint16_t i = 0; i < tx->inputCount; ++i)
-        {
-            printf("Witness for Input %u:\n", i + 1);
-            PrintWitness(&tx->witnesses[i]);
-        }
-    }
-
-    // Print the locktime
-    printf("Locktime: %u\n", tx->locktime);
-}
-
-void PrintBlock(const Block *block)
-{
-    // Print the magic number in hexadecimal format
-    printf("Magic: 0x%08x\n", block->magic);
-
-    // Print the block size in bytes
-    printf("Block Size: %u bytes\n", block->blockSize);
-
-    // Print the number of transactions in the block
-    printf("Transaction Count: %u\n", block->txCount);
-
-    // Print the block header
-    printf("Block Header:\n");
-    PrintBlockHeader(&block->header);
-
-    // Print each transaction in the block
-    printf("Transactions:\n");
-    for (uint16_t i = 0; i < block->txCount; ++i)
-    {
-        printf("Transaction %u:\n", i + 1);
-        PrintTransaction(&block->transactions[i]);
-    }
-}
-
 // Initializes BlockHeader with default values
 void InitBlockHeader(BlockHeader *header) {
     memset(header, 0, sizeof(BlockHeader));  // Set everything to zero

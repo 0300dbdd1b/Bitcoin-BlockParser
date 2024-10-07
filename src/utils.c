@@ -213,15 +213,11 @@ void ReverseString(unsigned char *str, size_t size)
     }
 }
 
-void	PrintByteString(const uint8_t *array, size_t size)
-{
-	size_t i = 0;
-	while (i < size)
-	{
-		printf("%02X", *array);
-		array++;
-		i++;
-	}
+
+void PrintByteString(const uint8_t *bytes, size_t size, FILE *output) {
+    for (size_t i = 0; i < size; ++i) {
+        fprintf(output, "%02X", bytes[i]);
+    }
 }
 
 

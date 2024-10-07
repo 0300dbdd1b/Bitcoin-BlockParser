@@ -15,6 +15,8 @@ Block GetBlock(int height)
 	return block;
 }
 
+
+// WARN: UNSAFE FUNCTION -- can bloat memory
 Block *GetBlocks(int height, int count)
 {
 	Block *blocks = malloc(sizeof(Block) * count);

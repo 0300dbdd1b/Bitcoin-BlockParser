@@ -90,6 +90,8 @@ static FILE* _log_output_stream = NULL;
 static char _log_file_path[256] = LOG_FILE_PATH;
 static char _log_file_mode[5] = LOG_FILE_MODE;
 static LogMode _log_mode = LOG_MODE_STDERR;
+static int _log_print_line = 1;  // 1 to print file and line number, 0 to omit
+static int _log_print_time = 1;  // 1 to print timestamp, 0 to omit
 
 /* Function prototypes for log configuration */
 static void _set_log_level(int level) UNUSED_FUNC;
@@ -103,6 +105,8 @@ static const char* _log_level_to_string(int level);
 static void _current_time_string(char* buffer, size_t size);
 static void _clear_log_file() UNUSED_FUNC;  /* Function to clear the log file */
 static void _erase_log_file() UNUSED_FUNC;  /* Function to erase the log file */
+static void _set_log_print_line(int print_line) UNUSED_FUNC;
+static void _set_log_print_time(int print_time) UNUSED_FUNC;
 
 /* Set log level */
 static void _set_log_level(int level) {
@@ -135,6 +139,16 @@ static void _set_log_mode(LogMode mode) {
     } else {
         _close_log_file();
     }
+}
+
+/* Set whether to print file name and line number */
+static void _set_log_print_line(int print_line) {
+    _log_print_line = print_line;
+}
+
+/* Set whether to print timestamp */
+static void _set_log_print_time(int print_time) {
+    _log_print_time = print_time;
 }
 
 /* Open the log file */
@@ -215,19 +229,32 @@ static void _erase_log_file() {
 static void _log_message(int level, const char* file, int line, const char* format, ...) {
     if (level >= _log_level) {
         char log_message[MAX_LOG_MESSAGE_LENGTH];
-        char time_buffer[64];
+        char time_buffer[64] = "";
         va_list args;
 
-        _current_time_string(time_buffer, sizeof(time_buffer));
+        /* Create the log message based on the flags */
+        size_t offset = 0;
 
-        /* Create the initial part of the log message */
-        _SNPRINTF(log_message, sizeof(log_message), "[%s] %s:%d [%s] ", time_buffer, file, line, _log_level_to_string(level));
+        /* Append time if the flag is set */
+        if (_log_print_time) {
+            _current_time_string(time_buffer, sizeof(time_buffer));
+            offset += _SNPRINTF(log_message + offset, sizeof(log_message) - offset, "[%s] ", time_buffer);
+        }
+
+        /* Include file and line number if enabled */
+        if (_log_print_line) {
+            offset += _SNPRINTF(log_message + offset, sizeof(log_message) - offset, "%s:%d ", file, line);
+        }
+
+        /* Include log level */
+        offset += _SNPRINTF(log_message + offset, sizeof(log_message) - offset, "[%s] ", _log_level_to_string(level));
 
         /* Append the formatted user message */
         va_start(args, format);
-        _VSPRINTF(log_message + strlen(log_message), sizeof(log_message) - strlen(log_message), format, args);
+        _VSPRINTF(log_message + offset, sizeof(log_message) - offset, format, args);
         va_end(args);
 
+        /* Print the final log message */
         FILE* output_stream = (_log_mode == LOG_MODE_FILE) ? _log_output_stream :
                               (_log_mode == LOG_MODE_STDERR) ? stderr : stdout;
 
@@ -248,7 +275,10 @@ static void _log_message(int level, const char* file, int line, const char* form
 #define SET_LOG_FILE_PATH(filepath) _set_log_file_path(filepath)
 #define SET_LOG_FILE_MODE(mode) _set_log_file_mode(mode)
 #define SET_LOG_MODE(mode) _set_log_mode(mode)
+#define SET_LOG_PRINT_LINE(print_line) _set_log_print_line(print_line)
+#define SET_LOG_PRINT_TIME(print_time) _set_log_print_time(print_time)
 #define CLEAR_LOG_FILE() _clear_log_file()
 #define ERASE_LOG_FILE() _erase_log_file()
 
 #endif /* LOGGER_H */
+

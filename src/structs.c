@@ -1,4 +1,6 @@
 #include "structs.h"
+#include "logger.h"
+#include <stdint.h>
 #include <stdlib.h>
 
 void FreeInput(Input *input)
@@ -16,7 +18,7 @@ void FreeWitness(Witness *witness)
 {
 	if (witness->stackItems)
 	{
-		for (uint8_t i = 0; i < witness->stackItemsCount; i++)
+		for (uint16_t i = 0; i < witness->stackItemsCount; i++)
 		{
 			free(witness->stackItems[i].item);
 		}
@@ -26,14 +28,20 @@ void FreeWitness(Witness *witness)
 
 void FreeTransaction(Transaction *transaction)
 {
-
+	for (uint16_t inputIndex = 0; inputIndex < transaction->inputCount; inputIndex++)
+		FreeInput(&(transaction->inputs[inputIndex]));
+	for (uint16_t outputIndex = 0; outputIndex < transaction->outputCount; outputIndex++)
+		FreeOutput(&(transaction->outputs[outputIndex]));
+	for (uint16_t witnessIndex = 0; witnessIndex < transaction->inputCount; witnessIndex++)
+		FreeWitness(&(transaction->witnesses[witnessIndex]));
 }
 
 void FreeBlock(Block *block)
 {
+	LOG_DEBUG("ENTERING FREEBLOCK");
 	if (block->transactions)
 	{
-		for (uint8_t i = 0; i < block->txCount; i++)
+		for (uint16_t i = 0; i < block->txCount; i++)
 			FreeTransaction(&(block->transactions[i]));
 		free(block->transactions);
 	}
