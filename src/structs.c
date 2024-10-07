@@ -1,5 +1,6 @@
 #include "structs.h"
 #include "logger.h"
+#include "utils.h"
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -11,19 +12,15 @@ void FreeInput(Input *input)
 void FreeOutput(Output *output)
 {
 	free(output->scriptPubKey);
-
 }
 
 void FreeWitness(Witness *witness)
 {
-	if (witness->stackItems)
+	for (uint16_t i = 0; i < witness->stackItemsCount; i++)
 	{
-		for (uint16_t i = 0; i < witness->stackItemsCount; i++)
-		{
-			free(witness->stackItems[i].item);
-		}
-		free(witness->stackItems);
+		free((witness->stackItems[i].item));
 	}
+	free(witness->stackItems);
 }
 
 void FreeTransaction(Transaction *transaction)
@@ -32,13 +29,18 @@ void FreeTransaction(Transaction *transaction)
 		FreeInput(&(transaction->inputs[inputIndex]));
 	for (uint16_t outputIndex = 0; outputIndex < transaction->outputCount; outputIndex++)
 		FreeOutput(&(transaction->outputs[outputIndex]));
-	for (uint16_t witnessIndex = 0; witnessIndex < transaction->inputCount; witnessIndex++)
-		FreeWitness(&(transaction->witnesses[witnessIndex]));
+
+	if (transaction->marker == 0x00 && transaction->flag >= 0x01)
+	{
+		for (uint16_t witnessIndex = 0; witnessIndex < transaction->inputCount; witnessIndex++)
+		{
+			FreeWitness(&(transaction->witnesses[witnessIndex]));
+		}
+	}
 }
 
 void FreeBlock(Block *block)
 {
-	LOG_DEBUG("ENTERING FREEBLOCK");
 	if (block->transactions)
 	{
 		for (uint16_t i = 0; i < block->txCount; i++)
