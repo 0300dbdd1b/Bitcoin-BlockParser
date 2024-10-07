@@ -1,3 +1,12 @@
+#if defined(__GNUC__) || defined(__clang__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+#elif defined(_MSC_VER)
+    #pragma warning(push)
+    #pragma warning(disable:4996)  // Example warning code for unsafe functions in MSVC
+#endif
+
+
 #include "debug.h"
 #include "logger.h"
 #include "platform.h"
@@ -179,12 +188,14 @@ void Indexer(char *datadir)
 	getcwd(currentDirectory, sizeof(currentDirectory));
     SanitizeDirString(currentDirectory);
 
+	// WARN: This code is unsafe if datadir is of size MAX_PATH_LENGTH
 	snprintf(blkDatDir, sizeof(blkDatDir), "%sblocks/", datadir);
     snprintf(blkIndexesDir, sizeof(blkIndexesDir), "%sblocks/index/", datadir);
-    snprintf(chainstateDir, sizeof(blkIndexesDir), "%schainstate/", datadir);
-    snprintf(coinstatsDir, sizeof(blkIndexesDir), "%sindexes/coinstats/", datadir);
-    snprintf(txIndexDir, sizeof(blkIndexesDir), "%sindexes/txindex/", datadir);
+    snprintf(chainstateDir, sizeof(chainstateDir), "%schainstate/", datadir);
+    snprintf(coinstatsDir, sizeof(coinstatsDir), "%sindexes/coinstats/", datadir);
+    snprintf(txIndexDir, sizeof(txIndexDir), "%sindexes/txindex/", datadir);
 
+	// WARN: Double Warn , beacuse one is not enough
 	snprintf(tmpBlkIndexesDir, sizeof(tmpBlkIndexesDir), "%stmpIndexes", currentDirectory);
 
 	//NOTE: We can make a better estimate of the number of blk.dat files 4k is dumb.
@@ -221,3 +232,12 @@ void PrintBlockIndexRecord(const BlockIndexRecord *record)
     PrintBlockHeader(&record->blockHeader, stdout);
   	printf("\n");
 }
+
+
+#if defined(__GNUC__) || defined(__clang__)
+    #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+    #pragma warning(pop)
+#endif
+
+
