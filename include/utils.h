@@ -47,6 +47,7 @@ void PrintOutput(const Output *output, FILE *file);
 void PrintInput(const Input *input, FILE *file);
 void PrintTransaction(const Transaction *tx, FILE *output);
 void PrintBlock(const Block *block, FILE *output);
+void PrintBlocks(const Blocks blocks, FILE *output);
 
 void DoubleSHA256(const uint8_t *data, size_t datasize, uint8_t *hash);
 

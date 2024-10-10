@@ -306,6 +306,11 @@ typedef struct Block
 	Transaction *transactions;		// Array of transactions
 } Block;
 
+typedef struct Blocks
+{
+	Block *blocks;
+	size_t count;
+} Blocks;
 
 // SEE: https://github.com/bitcoin/bitcoin/blob/60b816439eb4bd837778d424628cd3978e0856d9/src/chain.h#L88
 // NOTE: This is litterally a copy-paste from bitcoin /src/chain.h - BlockStatus enum

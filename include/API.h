@@ -6,7 +6,7 @@ char* Uint8ToHex(const uint8_t* data, size_t length);
 
 
 Block GetBlock(int height);
-Block *GetBlocks(int height, int count);
+Blocks GetBlocks(int height, int count);
 BlockHeader GetBlockHeader(int height);
 BlockStats GetBlockStats(int height);
 

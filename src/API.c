@@ -17,12 +17,15 @@ Block GetBlock(int height)
 
 
 // WARN: UNSAFE FUNCTION -- can bloat memory
-Block *GetBlocks(int height, int count)
+Blocks GetBlocks(int height, int count)
 {
-	Block *blocks = malloc(sizeof(Block) * count);
+	Blocks blocks;
+	blocks.count = 0;
+	blocks.blocks = malloc(sizeof(Block) * count);
 	for (int i = 0; i < count; i++)
 	{
-		blocks[i] = GetBlock(height + i);
+		blocks.blocks[i] = GetBlock(height + i);
+		blocks.count++;
 	}
 	return blocks;
 }

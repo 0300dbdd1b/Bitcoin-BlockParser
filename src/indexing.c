@@ -134,8 +134,6 @@ IndexRecords BuildIndexRecords(char *directory)
 }
 
 
-
-
 int ExtractBlockNumber(const char *filename)
 {
     const char *blkPtr = strstr(filename, "blk");
@@ -144,7 +142,7 @@ int ExtractBlockNumber(const char *filename)
         blkPtr += 3; // Skip past "blk"
         return atoi(blkPtr); // Convert the numeric part to an integer
     }
-    return 0; // If blk not found, return 0 (this shouldn't happen in your case)
+    return 0;
 }
 
 // Comparison function for qsort that compares file numbers
@@ -181,8 +179,8 @@ void Indexer(char *datadir)
 	char tmpBlkIndexesDir[MAX_PATH_LENGTH];
 
 	SanitizeDirString(datadir);
-	if (!IsDirectory(datadir))
-		exit(-1);
+	// if (!IsDirectory(datadir))
+		// GetBitcoinDatadir(datadir);
 	// WARN: This won't work on windows.
 	// INFO: Might want to use something faster than snprintf
 	getcwd(currentDirectory, sizeof(currentDirectory));
@@ -196,7 +194,7 @@ void Indexer(char *datadir)
     snprintf(txIndexDir, sizeof(txIndexDir), "%sindexes/txindex/", datadir);
 
 	// WARN: Double Warn , beacuse one is not enough
-	snprintf(tmpBlkIndexesDir, sizeof(tmpBlkIndexesDir), "%stmpIndexes", currentDirectory);
+	snprintf(tmpBlkIndexesDir, sizeof(tmpBlkIndexesDir), "%stmp", currentDirectory);
 
 	//NOTE: We can make a better estimate of the number of blk.dat files 4k is dumb.
 	gBlkFiles = ListFiles(blkDatDir, "blk*.dat", 4000);		//NOTE: Init Global Variables -- Array of blk.dat FileInfo
@@ -210,28 +208,6 @@ void Indexer(char *datadir)
 	DeleteDirectory(tmpBlkIndexesDir);
 }
 
-
-
-
-
-void PrintBlockIndexRecord(const BlockIndexRecord *record)
-{
-    printf("Block Index Record:\n");
-    printf("Version: %llu\n", (unsigned long long)record->version);
-    printf("Height: %llu\n", (unsigned long long)record->height);
-    printf("Validation Status: %u\n", record->validationStatus);
-    printf("Transaction Count: %llu\n", (unsigned long long)record->txCount);
-    printf("Block File: %llu\n", (unsigned long long)record->blockFile);
-    printf("Block Offset: %llu\n", (unsigned long long)record->blockOffset);
-    printf("Undo File: %llu\n", (unsigned long long)record->undoFile);
-    printf("Undo Offset: %llu\n", (unsigned long long)record->undoOffset);
-    printf("Block Hash: ");
-	PrintByteString(record->blockHash, SHA256_HASH_SIZE, stdout);
-    printf("\n");
-    printf("Block Header:\n");
-    PrintBlockHeader(&record->blockHeader, stdout);
-  	printf("\n");
-}
 
 
 #if defined(__GNUC__) || defined(__clang__)

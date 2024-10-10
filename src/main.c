@@ -62,18 +62,20 @@ int main(int ac, char *av[])
         }
     }
 
+
     // Index the directory (assume Indexer populates gIndexRecords)
     Indexer(directory);
     
-	FILE *file = fopen("salut", "wb");
-	Block block = GetBlock(600000);
-	LOG_DEBUG("WE GOT THE BLOCK");
-	PrintBlock(&block, file);
-	LOG_DEBUG("PRINTING COMPLETE");
-	FreeBlock(&block);
+	FILE *file = fopen("salut.json", "wb");
+	TIME_BLOCK_START(getblock);
+	Blocks blocks = GetBlocks(500000, 144);
+	TIME_BLOCK_END(getblock, "Retrieving Blocks took :");
+	TIME_BLOCK_START(printblock);
+	PrintBlocks(blocks, file);
+	TIME_BLOCK_END(getblock, "Printing Blocks took :");
+	// FreeBlock(&blocks);
 	fclose(file);
 	FreeFileList(&gBlkFiles);
-	LOG_DEBUG("END OF THE PROGRAM");
     TIME_BLOCK_END(main, "Total execution time: ");  // End benchmarking total execution time
     
     return 0;

@@ -232,6 +232,44 @@ void PrintBlock(const Block *block, FILE *output) {
     fprintf(output, "  ]\n");
     fprintf(output, "}\n");
 }
+
+
+void PrintBlocks(const Blocks blocks, FILE *output) {
+    fprintf(output, "[\n");  // Start of JSON array
+    for (size_t i = 0; i < blocks.count; i++)
+	{
+        PrintBlock(&blocks.blocks[i], output);  // Print each block
+        if (i < blocks.count - 1) { fprintf(output, ",\n"); }  // Add comma if not the last block
+		else { fprintf(output, "\n"); }
+    }
+    fprintf(output, "]\n");  // End of JSON array
+}
+
+
+void PrintBlockIndexRecord(const BlockIndexRecord *record)
+{
+    printf("Block Index Record:\n");
+    printf("Version: %llu\n", (unsigned long long)record->version);
+    printf("Height: %llu\n", (unsigned long long)record->height);
+    printf("Validation Status: %u\n", record->validationStatus);
+    printf("Transaction Count: %llu\n", (unsigned long long)record->txCount);
+    printf("Block File: %llu\n", (unsigned long long)record->blockFile);
+    printf("Block Offset: %llu\n", (unsigned long long)record->blockOffset);
+    printf("Undo File: %llu\n", (unsigned long long)record->undoFile);
+    printf("Undo Offset: %llu\n", (unsigned long long)record->undoOffset);
+    printf("Block Hash: ");
+	PrintByteString(record->blockHash, SHA256_HASH_SIZE, stdout);
+    printf("\n");
+    printf("Block Header:\n");
+    PrintBlockHeader(&record->blockHeader, stdout);
+  	printf("\n");
+}
+
+
+/*-----------------------------------------------------------------------------------*/
+
+
+
 // Initializes BlockHeader with default values
 void InitBlockHeader(BlockHeader *header) {
     memset(header, 0, sizeof(BlockHeader));  // Set everything to zero

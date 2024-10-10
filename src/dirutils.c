@@ -106,3 +106,46 @@ FileList ListFiles(const char *directory, const char *pattern, uint16_t allocati
     return fileList;
 }
 
+
+int IsBitcoinDatadir(const char *path)
+{
+	if (IsDirectory(path))
+	{
+		return 1;
+	}
+
+}
+
+void TryDefaultBitcoinDatadirs(char *datadir) {
+    const char *home = getenv("HOME");
+    const char *defaultLocations[] = {
+        "/usr/local/bitcoin",
+        "/opt/bitcoin",
+        "/var/lib/bitcoin",
+        "/mnt/data/bitcoin",
+        "/home/bitcoin/.bitcoin",
+        home ? strcat(strdup(home), "/.bitcoin") : NULL,
+        NULL // End of array marker
+    };
+
+    for (int i = 0; defaultLocations[i] != NULL; i++) {
+        if (IsBitcoinDatadir(defaultLocations[i])) {
+            strncpy(datadir, defaultLocations[i], 512);
+            printf("Using Bitcoin datadir: %s\n", datadir);
+            return;
+        }
+    }
+
+    fprintf(stderr, "No valid Bitcoin datadir found!\n");
+    exit(1);
+}
+
+// Function to get the Bitcoin datadir
+void GetBitcoinDatadir(char *datadir) {
+    if (datadir == NULL || strlen(datadir) == 0 || !IsBitcoinDatadir(datadir)) {
+        printf("Provided datadir is invalid. Trying default locations...\n");
+        TryDefaultBitcoinDatadirs(datadir);
+    } else {
+        printf("Provided datadir is valid: %s\n", datadir);
+    }
+}
